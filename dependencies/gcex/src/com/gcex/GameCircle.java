@@ -94,55 +94,6 @@ public class GameCircle extends Extension {
 			}
 		});
 	}
-
-	//////////////////////////////////////////////////////////////////////
-	///////////// ACHIEVEMENTS
-	//////////////////////////////////////////////////////////////////////
-
-	public static boolean displayAchievements() {
-		try {
-			AmazonGamesClient.getInstance().getAchievementsClient().showAchievementsOverlay();
-		} catch (Exception e) {
-			// Try connecting again
-			Log.i(TAG, "GameCircle: displayAchievements Exception");
-			Log.i(TAG, e.toString());
-			init();
-			return false;
-		}
-		return true;
-	}
-
-	public static boolean unlock(String idAchievement){
-		try {
-			AmazonGamesClient.getInstance().getAchievementsClient().updateProgress(idAchievement, 100.0f);
-		} catch (Exception e) {
-			Log.i(TAG, "GameCircle: unlock Exception");
-			Log.i(TAG, e.toString());
-			return false;
-		}
-		return true;
-	}
-	
-	public static boolean setSteps(String idAchievement, float steps){
-		try {
-			AmazonGamesClient.getInstance().getAchievementsClient().updateProgress(idAchievement, steps);
-		} catch (Exception e) {
-			Log.i(TAG, "GameCircle: unlock Exception");
-			Log.i(TAG, e.toString());
-			return false;
-		}
-		return true;
-	}
-
-	public static boolean increment(final String idAchievement, final float steps){
-		try {
-			AmazonGamesClient.getInstance().getAchievementsClient().getAchievements().setCallback(new AGResponseCallback<GetAchievementsResponse>() {
-				@Override
-				public void onComplete(GetAchievementsResponse achievementsResponse) {
-					for (Achievement ach: achievementsResponse.getAchievementsList()) {
-						if (ach.getId().equals(idAchievement)) {
-							float newProgress = steps + ach.getProgress();
-							AmazonGamesClient.getInstance().getAchievementsClient().updateProgress(idAchievement, newProgress);
 						}
 						@Override
 						public void onServiceNotReady(AmazonGamesStatus reason) {
@@ -179,63 +130,11 @@ public class GameCircle extends Extension {
 								estado = "onCreate: SERVICE_NOT_OPTED_IN";
 								break;							
 							} 
-					}
-				}
-			});
-		} catch (Exception e) {
-			Log.i(TAG, "GameCircle: increment Exception");
-			Log.i(TAG, e.toString());
-			return false;
-		}
-		return true;
-	}
-
-	public static boolean getAchievementStatus(final String idAchievement, final HaxeObject callbackObject) {
-		try {
-			AmazonGamesClient.getInstance().getAchievementsClient().getAchievements().setCallback(new AGResponseCallback<GetAchievementsResponse>() {
-				@Override
-				public void onComplete(GetAchievementsResponse achievementsResponse) {
-					for (Achievement ach: achievementsResponse.getAchievementsList()) {
-						if (ach.getId().equals(idAchievement)) {
-							if (ach.isUnlocked()) callbackObject.call2("onGetAchievementStatus", idAchievement, 1);
-							else callbackObject.call2("onGetAchievementStatus", idAchievement, 0);
 						}
 					}, EnumSet.of(AmazonGamesFeature.Achievements, AmazonGamesFeature.Leaderboards));
-					}
 				}
 			});
 		//} catch (Exception e) {}
-		} catch (Exception e) {
-			// Try connecting again
-			Log.i(TAG, "GameCircle: getAchievementStatus Exception");
-			Log.i(TAG, e.toString());
-			init();
-			return false;
-		}
-		return true;
-	}
-	
-	public static boolean getCurrentAchievementSteps(final String idAchievement, final HaxeObject callbackObject) {
-		try {
-			AmazonGamesClient.getInstance().getAchievementsClient().getAchievements().setCallback(new AGResponseCallback<GetAchievementsResponse>() {
-				@Override
-				public void onComplete(GetAchievementsResponse achievementsResponse) {
-					for (Achievement ach: achievementsResponse.getAchievementsList()) {
-						if (ach.getId().equals(idAchievement)) {
-							callbackObject.call2("onGetAchievementSteps", idAchievement, ach.getProgress());
-						}
-					}
-				}
-			});
-		} catch (Exception e) {
-			// Try connecting again
-			Log.i(TAG, "GameCircle: getCurrentAchievementSteps Exception");
-			Log.i(TAG, e.toString());
-			init();
-			return false;
-		}
-		return true;
-	}
 	}
 
 	public static boolean isInitialized() {
