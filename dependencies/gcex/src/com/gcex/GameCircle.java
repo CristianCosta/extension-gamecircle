@@ -94,54 +94,5 @@ public class GameCircle extends Extension {
 			}
 		});
 	}
-						}
-						@Override
-						public void onServiceNotReady(AmazonGamesStatus reason) {
-							//Esta todo mal.
-							switch (reason) { 
-							case CANNOT_AUTHORIZE: 
-								estado = "onCreate: CANNOT_AUTHORIZE";
-								break;
-							case CANNOT_BIND: 
-								estado = "onCreate: CANNOT_BIND";
-								break;
-							case CANNOT_INITIALIZE:
-								estado = "onCreate: CANNOT_INITIALIZE";
-								break;
-							case INITIALIZING:
-								estado = "onCreate: INITIALIZING";
-								break;							
-							case INVALID_SESSION:
-								estado = "onCreate: INVALID_SESSION";
-								break;						
-							case NOT_AUTHENTICATED: 
-								estado = "onCreate: NOT_AUTHENTICATED";
-								break;
-							case NOT_AUTHORIZED: 
-								estado = "onCreate: NOT_AUTHORIZED";
-								break;
-							case SERVICE_CONNECTED:
-								estado = "onCreate: SERVICE_CONNECTED";
-								break;							
-							case SERVICE_DISCONNECTED:
-								estado = "onCreate: SERVICE_DISCONNECTED";
-								break;							
-							case SERVICE_NOT_OPTED_IN:
-								estado = "onCreate: SERVICE_NOT_OPTED_IN";
-								break;							
-							} 
-						}
-					}, EnumSet.of(AmazonGamesFeature.Achievements, AmazonGamesFeature.Leaderboards));
-				}
-			});
-		//} catch (Exception e) {}
-	}
-
-	public static boolean isInitialized() {
-		try {
-			return AmazonGamesClient.isInitialized();
-		} catch (Exception e) {}
-		return false;
-	}
 
 }
