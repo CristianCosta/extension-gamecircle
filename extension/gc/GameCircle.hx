@@ -118,3 +118,63 @@ class GameCircle {
 	public function onGetAchievementSteps(idAchievement:String, steps:Float) {
 		if (onGetPlayerCurrentSteps != null) onGetPlayerCurrentSteps(idAchievement, steps);
 	}
+
+	//////////////////////////////////////////////////////////////////////
+	///////////// SCOREBOARDS
+	//////////////////////////////////////////////////////////////////////
+
+	public static var displayScoreboard(default,null):String->Bool=
+	#if android
+		openfl.utils.JNI.createStaticMethod("com/gcex/GameCircle", "displayScoreboard", "(Ljava/lang/String;)Z");
+	#else
+		function(id:String):Bool{return false;}
+	#end
+
+	public static var displayAllScoreboards(default,null):Void->Bool=
+	#if android
+		openfl.utils.JNI.createStaticMethod("com/gcex/GameCircle", "displayAllScoreboards", "()Z");
+	#else
+		function():Bool{return false;}
+	#end
+
+	private static var javaSetScore(default,null):String->Int->Int->Bool=
+	#if android
+		openfl.utils.JNI.createStaticMethod("com/gcex/GameCircle", "setScore", "(Ljava/lang/String;II)Z");
+	#else
+		function(id:String,high_score:Int, low_score:Int):Bool{return false;}
+	#end
+
+	public static function setScore(id:String, score:Int):Bool {
+		return javaSetScore(id, 0, score);
+	}
+
+	public static function setScore64(id:String, score:Int64):Bool {
+		var low_score:Int = Int64.getLow(score);
+		var high_score:Int = Int64.getHigh(score);
+		return javaSetScore(id, high_score, low_score);
+	}
+	
+	///////////// GET PLAYER SCORE
+	
+	public static var onGetPlayerScore:String->Int->Void=null;
+	public static var onGetPlayerScore64:String->Int64->Void=null;
+
+	public static function getPlayerScore(id:String):Bool {
+		return javaGetPlayerScore(id, getInstance());
+	}
+
+	private static var javaGetPlayerScore(default,null):String->GameCircle->Bool=
+	#if android
+		openfl.utils.JNI.createStaticMethod("com/gcex/GameCircle", "getPlayerScore", "(Ljava/lang/String;Lorg/haxe/lime/HaxeObject;)Z");
+	#else
+		function(id:String, callback:GameCircle):Bool{return false;}
+	#end
+
+	public function onGetScoreboard(idScoreboard:String, high_score:Int, low_score:Int) {
+		if (onGetPlayerScore != null) onGetPlayerScore(idScoreboard, low_score);
+		if (onGetPlayerScore64 != null) {
+			var score:Int64 = Int64.make(high_score, low_score);
+			onGetPlayerScore64(idScoreboard, score);
+		}
+	}
+

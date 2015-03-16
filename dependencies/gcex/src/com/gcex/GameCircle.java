@@ -95,7 +95,6 @@ public class GameCircle extends Extension {
 		});
 	}
 
-}
 	//////////////////////////////////////////////////////////////////////
 	///////////// ACHIEVEMENTS
 	//////////////////////////////////////////////////////////////////////
@@ -200,3 +199,68 @@ public class GameCircle extends Extension {
 		}
 		return true;
 	}
+
+	//////////////////////////////////////////////////////////////////////
+	///////////// SCOREBOARDS
+	//////////////////////////////////////////////////////////////////////
+
+	public static boolean displayScoreboard(String idScoreboard) {
+		try {
+			AmazonGamesClient.getInstance().getLeaderboardsClient().showLeaderboardOverlay(idScoreboard);
+		} catch (Exception e) {
+			Log.i(TAG, "GameCircle: displayScoreboard Exception");
+			Log.i(TAG, e.toString());
+			init();
+			return false;
+		}
+		return true;
+	}
+
+	public static boolean displayAllScoreboards() {
+		try {
+			AmazonGamesClient.getInstance().getLeaderboardsClient().showLeaderboardsOverlay();
+		} catch (Exception e) {
+			// Try connecting again
+			Log.i(TAG, "GameCircle: displayScoreboard Exception");
+			Log.i(TAG, e.toString());
+			init();
+			return false;
+		}
+		return true;
+	}
+	
+	public static boolean setScore(String leaderboardId, int high_score, int low_score){
+		try {
+			long score = (((long)high_score << 32) | ((long)low_score & 0xFFFFFFFF));
+			AmazonGamesClient.getInstance().getLeaderboardsClient().submitScore(leaderboardId, score);
+        } catch (Exception e) {
+			Log.i(TAG, "GameCircle: setScore Exception");
+			Log.i(TAG, e.toString());
+			return false;
+		}
+		Log.i(TAG, "GameCircle: setScore complete");
+    	return true;
+	}
+
+	public static boolean getPlayerScore(final String idScoreboard, final HaxeObject callbackObject) {
+		try {
+			AmazonGamesClient.getInstance().getLeaderboardsClient().getLocalPlayerScore(idScoreboard, LeaderboardFilter.GLOBAL_ALL_TIME).setCallback(new AGResponseCallback<GetPlayerScoreResponse>() {
+				@Override
+				public void onComplete(GetPlayerScoreResponse playerScore) {
+					if (playerScore != null) {
+						long score = playerScore.getScoreValue();
+						int high_score = (int) (score >>> 32);
+						int low_score = (int) (score & 0xFFFFFFFF);
+						callbackObject.call3("onGetScoreboard", idScoreboard, high_score, low_score);
+					}
+				}
+			});
+		} catch (Exception e) {
+			// Try connecting again
+			Log.i(TAG, "GameCircle: getPlayerScore Exception");
+			Log.i(TAG, e.toString());
+			init();
+			return false;
+		}
+		return true;
+	}	
