@@ -264,3 +264,20 @@ public class GameCircle extends Extension {
 		}
 		return true;
 	}	
+
+	//////////////////////////////////////////////////////////////////////
+	///////////// DEBUG
+	//////////////////////////////////////////////////////////////////////
+
+	public static String displayMessage () {
+		return estado +" "+ numerito +" "+ numerote;
+	}
+
+	public static boolean isInitialized() {
+		try {
+			return AmazonGamesClient.isInitialized();
+		} catch (Exception e) {}
+		return false;
+	}
+
+}
