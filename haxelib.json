@@ -1,13 +1,10 @@
 {
         "name": "extension-gamecircle",
-        "url": "https://github.com/fbricker/openfl-gpg",
+        "url": "https://github.com/CristianCosta/extension-gamecircle",
         "license": "MIT",
-        "contributors":["fbricker"],
-        "tags": ["social","api","game-center","gc","gamecenter","games","openfl"],
-        "description": "OpenFL Game Center extension for Android.",
-        "dependencies": {
-            "openfl-gps-lib": ""
-        },
+        "contributors":["CristianCosta"],
+        "tags": ["social","api","game-circle","gc","gamecircle","games","openfl"],
+        "description": "OpenFL Game Circle extension for Android and Kindle devices.",
         "version": "1.1.0",
         "releasenote": "Add login result event functionality."
 }

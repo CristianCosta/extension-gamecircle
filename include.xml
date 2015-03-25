@@ -1,11 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <extension>
 	<section if="android">
-		<!--haxelib name="openfl-gps-lib" /--> 
-			<!-- GameCircle jars >
-		<java path="libs/gamecircle.jar" />
-		<java path="libs/AmazonInsights-android-sdk-2.1.26.jar" />
-		<java path="libs/login-with-amazon-sdk.jar" /-->
 		<dependency name="gcex" path="dependencies/gcex" /> 
 	</section>
 </extension>
