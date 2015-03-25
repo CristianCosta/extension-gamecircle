@@ -18,7 +18,11 @@ import com.amazon.ags.api.achievements.GetAchievementsResponse;
 import com.amazon.ags.api.achievements.Achievement;
 import com.amazon.ags.api.leaderboards.GetPlayerScoreResponse;
 import com.amazon.ags.api.overlay.PopUpLocation;
+import com.amazon.ags.api.whispersync.GameDataMap;
+import com.amazon.ags.api.whispersync.WhispersyncEventListener;
+import com.amazon.ags.api.whispersync.model.*;
 import com.amazon.ags.constants.LeaderboardFilter;
+
 
 import java.util.EnumSet;
 
@@ -27,6 +31,8 @@ public class GameCircle extends Extension {
 	private static final String TAG = "EXTENSION-GAMECIRCLE";
 	private static AmazonGamesStatus gamesStatus = AmazonGamesStatus.INITIALIZING;
 	private static AmazonGamesClient agsClient = null;
+	private static GameDataMap gameDataMap = null;
+	private static EnumSet<AmazonGamesFeature> gameFeatures;
 
 	private static String estado = "Vacio.";
 	private static int numerito = 0;
@@ -37,62 +43,157 @@ public class GameCircle extends Extension {
 	//////////////////////////////////////////////////////////////////////
 
 	public static void pause() {
-		if (agsClient != null) {
-			agsClient.release();
-		}
+		if (agsClient != null) agsClient.release();
 		numerote = numerote * 2;
 	}
 
-	public static void init() {
+	public static void resume() {
 		numerito++;
 		mainActivity.runOnUiThread(new Runnable() {
 			public void run() {
 				AmazonGamesClient.initialize(mainActivity, new AmazonGamesCallback() {
 					@Override
 					public void onServiceReady(AmazonGamesClient amazonGamesClient) {
-						//Esta todo bien.
 						agsClient = amazonGamesClient;
-						estado = "Successful";
+						Log.i(TAG, "GameCircle: initialize Successful");
 					}
 					@Override
 					public void onServiceNotReady(AmazonGamesStatus reason) {
-						//Esta todo mal.
 						switch (reason) { 
 						case CANNOT_AUTHORIZE: 
-							estado = "onCreate: CANNOT_AUTHORIZE";
+							estado = "onCreate: CANNOT_AUTHORIZE"; //Borrar despues.
+							Log.e(TAG, "GameCircle: CANNOT_AUTHORIZE");
 							break;
 						case CANNOT_BIND: 
-							estado = "onCreate: CANNOT_BIND";
+							estado = "onCreate: CANNOT_BIND"; //Borrar despues.
+							Log.e(TAG, "GameCircle: CANNOT_BIND");
 							break;
 						case CANNOT_INITIALIZE:
-							estado = "onCreate: CANNOT_INITIALIZE";
+							estado = "onCreate: CANNOT_INITIALIZE"; //Borrar despues.
+							Log.e(TAG, "GameCircle: CANNOT_INITIALIZE");
 							break;
 						case INITIALIZING:
-							estado = "onCreate: INITIALIZING";
-							break;							
+							estado = "onCreate: INITIALIZING"; //Borrar despues.
+							Log.e(TAG, "GameCircle: INITIALIZING");
+							break;
 						case INVALID_SESSION:
-							estado = "onCreate: INVALID_SESSION";
-							break;						
+							estado = "onCreate: INVALID_SESSION"; //Borrar despues.
+							Log.e(TAG, "GameCircle: INVALID_SESSION");
+							break;
 						case NOT_AUTHENTICATED: 
-							estado = "onCreate: NOT_AUTHENTICATED";
+							estado = "onCreate: NOT_AUTHENTICATED"; //Borrar despues.
+							Log.e(TAG, "GameCircle: NOT_AUTHENTICATED");
 							break;
 						case NOT_AUTHORIZED: 
-							estado = "onCreate: NOT_AUTHORIZED";
+							estado = "onCreate: NOT_AUTHORIZED"; //Borrar despues.
+							Log.e(TAG, "GameCircle: NOT_AUTHORIZED");
 							break;
 						case SERVICE_CONNECTED:
-							estado = "onCreate: SERVICE_CONNECTED";
-							break;							
+							estado = "onCreate: SERVICE_CONNECTED"; //Borrar despues.
+							Log.e(TAG, "GameCircle: SERVICE_CONNECTED");
+							break;
 						case SERVICE_DISCONNECTED:
-							estado = "onCreate: SERVICE_DISCONNECTED";
-							break;							
+							estado = "onCreate: SERVICE_DISCONNECTED"; //Borrar despues.
+							Log.e(TAG, "GameCircle: SERVICE_DISCONNECTED");
+							break;
 						case SERVICE_NOT_OPTED_IN:
-							estado = "onCreate: SERVICE_NOT_OPTED_IN";
-							break;							
+							estado = "onCreate: SERVICE_NOT_OPTED_IN"; //Borrar despues.
+							Log.e(TAG, "GameCircle: SERVICE_NOT_OPTED_IN");
+							break;
 						} 
 					}
-				}, EnumSet.of(AmazonGamesFeature.Achievements, AmazonGamesFeature.Leaderboards));
+				}, gameFeatures);
 			}
 		});
+	} 
+	//Deberia ser mas flexible, aca impongo que se va a usar achievements, leaderboards y whispersync.
+	//Que pasaria si el desarrollador no quisiera whispersync?
+	//Frula cosmica.
+
+/*	public static void setFeatures(boolean achievements, boolean leaderboards, boolean whispersync) {
+		if (achievements)
+			if (leaderboards)
+				if (whispersync)
+					features.of(AmazonGamesFeature.Achievements, AmazonGamesFeature.Leaderboards, AmazonGamesFeature.Whispersync));
+				else
+					features.of(AmazonGamesFeature.Achievements, AmazonGamesFeature.Leaderboards));
+	} Muchas permutaciones.
+*/
+
+	public static void init(boolean enableWhispersync) { //Este init podria contener el codigo de setFeatures, setear el EnumSet desde aca y usarlo en resume().
+		if (enableWhispersync) {
+			gameFeatures = EnumSet.of(AmazonGamesFeature.Achievements, AmazonGamesFeature.Leaderboards, AmazonGamesFeature.Whispersync);
+			resume();
+			gameDataMap = AmazonGamesClient.getWhispersyncClient().getGameData();
+		} else {
+			gameFeatures = EnumSet.of(AmazonGamesFeature.Achievements, AmazonGamesFeature.Leaderboards);
+			resume();
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	///////////// COULD STORAGE - WHISPERSYNC
+	//////////////////////////////////////////////////////////////////////
+
+	public static boolean cloudSet(String key, String value){
+		try {
+			gameDataMap.getDeveloperString(key).setValue(value);
+		} catch (Exception e) {
+			Log.i(TAG, "GameCircle: cloudSet Exception");
+			Log.i(TAG, e.toString());
+			return false;
+		}
+		return true;
+	}
+
+	public static boolean cloudGet(final String key, final HaxeObject callbackObject) {
+		try {
+			AmazonGamesClient.getWhispersyncClient().setWhispersyncEventListener(new WhispersyncEventListener() {
+				public void onNewCloudData() {
+					try {
+						handlePotentialGameDataConflicts(key, callbackObject);
+					} catch (Exception e) {
+						Log.i(TAG, "GameCircle: cloudGet CRITICAL Exception");
+						Log.i(TAG, e.toString());
+					}
+				}
+				public void onDataUploadedToCloud() {
+					try {
+						handlePotentialGameDataConflicts(key, callbackObject);
+					} catch (Exception e) {
+						Log.i(TAG, "GameCircle: cloudGet CRITICAL Exception");
+						Log.i(TAG, e.toString());
+					}
+				}
+			});
+		} catch (Exception e) {
+			Log.i(TAG, "GameCircle: cloudGet Exception");
+			Log.i(TAG, e.toString());
+			return false;
+		}
+		return true;
+	}
+
+	private static void handlePotentialGameDataConflicts(String key, HaxeObject callbackObject) {
+		SyncableDeveloperString developerString = gameDataMap.getDeveloperString(key);
+		if (developerString.inConflict()) {
+			String server = developerString.getCloudValue();
+			String local = developerString.getValue();
+			callbackObject.call3("cloudGetConflictCallback", key, local, server);
+		} else {
+			callbackObject.call2("cloudGetCallback", key, developerString.getValue());
+		}
+	}
+
+	public static boolean markConflictAsResolved(String key) {
+		try {
+			gameDataMap.getDeveloperString(key).markAsResolved();
+		} catch (Exception e) {
+			Log.i(TAG, "GameCircle: markConflictAsResolved Exception");
+			Log.i(TAG, e.toString());
+			return false;
+		}
+		return true;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -106,7 +207,7 @@ public class GameCircle extends Extension {
 			// Try connecting again
 			Log.i(TAG, "GameCircle: displayAchievements Exception");
 			Log.i(TAG, e.toString());
-			init();
+			resume();
 			return false;
 		}
 		return true;
@@ -134,7 +235,7 @@ public class GameCircle extends Extension {
 		return true;
 	}
 
-	public static boolean increment(final String idAchievement, final float steps){
+/*	public static boolean increment(final String idAchievement, final float steps){
 		try {
 			AmazonGamesClient.getInstance().getAchievementsClient().getAchievements().setCallback(new AGResponseCallback<GetAchievementsResponse>() {
 				@Override
@@ -154,6 +255,7 @@ public class GameCircle extends Extension {
 		}
 		return true;
 	}
+*/
 
 	public static boolean getAchievementStatus(final String idAchievement, final HaxeObject callbackObject) {
 		try {
@@ -172,7 +274,7 @@ public class GameCircle extends Extension {
 			// Try connecting again
 			Log.i(TAG, "GameCircle: getAchievementStatus Exception");
 			Log.i(TAG, e.toString());
-			init();
+			resume();
 			return false;
 		}
 		return true;
@@ -194,7 +296,7 @@ public class GameCircle extends Extension {
 			// Try connecting again
 			Log.i(TAG, "GameCircle: getCurrentAchievementSteps Exception");
 			Log.i(TAG, e.toString());
-			init();
+			resume();
 			return false;
 		}
 		return true;
@@ -210,7 +312,7 @@ public class GameCircle extends Extension {
 		} catch (Exception e) {
 			Log.i(TAG, "GameCircle: displayScoreboard Exception");
 			Log.i(TAG, e.toString());
-			init();
+			resume();
 			return false;
 		}
 		return true;
@@ -223,7 +325,7 @@ public class GameCircle extends Extension {
 			// Try connecting again
 			Log.i(TAG, "GameCircle: displayScoreboard Exception");
 			Log.i(TAG, e.toString());
-			init();
+			resume();
 			return false;
 		}
 		return true;
@@ -259,7 +361,7 @@ public class GameCircle extends Extension {
 			// Try connecting again
 			Log.i(TAG, "GameCircle: getPlayerScore Exception");
 			Log.i(TAG, e.toString());
-			init();
+			resume();
 			return false;
 		}
 		return true;

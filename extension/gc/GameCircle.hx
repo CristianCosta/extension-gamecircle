@@ -11,9 +11,16 @@ class GameCircle {
 	///////////// INIT
 	//////////////////////////////////////////////////////////////////////	
 
-	public static var javaInit(default,null):Void->Void=
+	public static var javaInit(default,null):Bool->Void=
 	#if android
 		openfl.utils.JNI.createStaticMethod("com/gcex/GameCircle", "init", "()V");
+	#else
+		function():Void{}
+	#end
+
+	public static var javaResume(default,null):Void->Void=
+	#if android
+		openfl.utils.JNI.createStaticMethod("com/gcex/GameCircle", "resume", "()V");
 	#else
 		function():Void{}
 	#end
@@ -30,9 +37,14 @@ class GameCircle {
 		javaPause();
 	}
 
-	public static function init() {
+	public static function resume() {
+		trace("Resuming");
+		javaResume();
+	}
+
+	public static function init(enableWhispersync:Bool) {
 		trace("Initializing");
-		javaInit();
+		javaInit(enableWhispersync);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -46,6 +58,47 @@ class GameCircle {
 	private static function getInstance():GameCircle{
 		if (instance == null) instance = new GameCircle();
 		return instance;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	///////////// COULD STORAGE - WHISPERSYNC
+	//////////////////////////////////////////////////////////////////////
+
+	public static var cloudSet(default,null):String->String->Bool=
+	#if android
+		openfl.utils.JNI.createStaticMethod("com/gcex/GameCircle", "cloudSet", "(Ljava/lang/String;Ljava/lang/String;)Z");
+	#else
+		function(key:String,value:String):Bool{return false;}
+	#end
+
+	private static var javaCloudGet(default,null):String->GameCircle->Bool=
+	#if android
+		openfl.utils.JNI.createStaticMethod("com/gcex/GameCircle", "cloudGet", "(Ljava/lang/String;Lorg/haxe/lime/HaxeObject;)Z");
+	#else
+		function(key:String, callback:GooglePlayGames):Bool{return false;}
+	#end
+
+	public static function cloudGet(key:String):Bool{
+		return javaCloudGet(key, getInstance());
+	}
+
+	public static var markConflictAsResolved(default,null):String->Bool=
+	#if android
+		openfl.utils.JNI.createStaticMethod("com/gcex/GameCircle", "markConflictAsResolved", "(Ljava/lang/String;)Z");
+	#else
+		function(key:String):Bool{return false;}
+	#end
+
+	public static var onCloudGetComplete:String->String->Void=null;
+	public static var onCloudGetConflict:String->String->String->Void=null;
+
+	public function cloudGetCallback(key:String, value:String){
+		if (onCloudGetComplete != null) onCloudGetComplete(key,value);
+	}
+
+	public function cloudGetConflictCallback(key:String, localValue:String, serverValue:String){
+		trace ("Conflict versions on KEY: "+key+". Local: "+localValue+" - Server: "+serverValue);
+		if (onCloudGetConflict != null) onCloudGetConflict(key,localValue,serverValue);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -73,12 +126,13 @@ class GameCircle {
 		function(id:String,steps:Int):Bool{return false;}
 	#end
 	
-	public static var increment(default,null):String->Float->Bool=
+/*	public static var increment(default,null):String->Float->Bool=
 	#if android
 		openfl.utils.JNI.createStaticMethod("com/gcex/GameCircle", "increment", "(Ljava/lang/String;F)Z");
 	#else
 		function(id:String,step:Int):Bool{return false;}
 	#end
+*/
 
 	///////////// ACHIEVEMENT STATUS
 	
