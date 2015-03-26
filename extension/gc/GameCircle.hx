@@ -137,14 +137,6 @@ class GameCircle {
 	#else
 		function(id:String,steps:Float):Bool{return false;}
 	#end
-	
-/*	public static var increment(default,null):String->Float->Bool=
-	#if android
-		openfl.utils.JNI.createStaticMethod("com/gcex/GameCircle", "increment", "(Ljava/lang/String;F)Z");
-	#else
-		function(id:String,step:Int):Bool{return false;}
-	#end
-*/
 
 	///////////// ACHIEVEMENT STATUS
 	

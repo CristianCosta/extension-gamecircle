@@ -235,28 +235,6 @@ public class GameCircle extends Extension {
 		return true;
 	}
 
-/*	public static boolean increment(final String idAchievement, final float steps){
-		try {
-			AmazonGamesClient.getInstance().getAchievementsClient().getAchievements().setCallback(new AGResponseCallback<GetAchievementsResponse>() {
-				@Override
-				public void onComplete(GetAchievementsResponse achievementsResponse) {
-					for (Achievement ach: achievementsResponse.getAchievementsList()) {
-						if (ach.getId().equals(idAchievement)) {
-							float newProgress = steps + ach.getProgress();
-							AmazonGamesClient.getInstance().getAchievementsClient().updateProgress(idAchievement, newProgress);
-						}
-					}
-				}
-			});
-		} catch (Exception e) {
-			Log.i(TAG, "GameCircle: increment Exception");
-			Log.i(TAG, e.toString());
-			return false;
-		}
-		return true;
-	}
-*/
-
 	public static boolean getAchievementStatus(final String idAchievement, final HaxeObject callbackObject) {
 		try {
 			AmazonGamesClient.getInstance().getAchievementsClient().getAchievements().setCallback(new AGResponseCallback<GetAchievementsResponse>() {
