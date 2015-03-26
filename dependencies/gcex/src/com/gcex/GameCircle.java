@@ -23,7 +23,6 @@ import com.amazon.ags.api.whispersync.WhispersyncEventListener;
 import com.amazon.ags.api.whispersync.model.*;
 import com.amazon.ags.constants.LeaderboardFilter;
 
-
 import java.util.EnumSet;
 
 public class GameCircle extends Extension {
@@ -33,10 +32,6 @@ public class GameCircle extends Extension {
 	private static AmazonGamesClient agsClient = null;
 	private static GameDataMap gameDataMap = null;
 	private static EnumSet<AmazonGamesFeature> gameFeatures;
-
-	private static String estado = "Vacio.";
-	private static int numerito = 0;
-	private static int numerote = 1;
 	
 	//////////////////////////////////////////////////////////////////////
 	///////////// INIT
@@ -44,11 +39,9 @@ public class GameCircle extends Extension {
 
 	public static void pause() {
 		if (agsClient != null) agsClient.release();
-		numerote = numerote * 2;
 	}
 
 	public static void resume() {
-		numerito++;
 		mainActivity.runOnUiThread(new Runnable() {
 			public void run() {
 				AmazonGamesClient.initialize(mainActivity, new AmazonGamesCallback() {
@@ -61,43 +54,33 @@ public class GameCircle extends Extension {
 					public void onServiceNotReady(AmazonGamesStatus reason) {
 						switch (reason) { 
 						case CANNOT_AUTHORIZE: 
-							estado = "onCreate: CANNOT_AUTHORIZE"; //Borrar despues.
 							Log.e(TAG, "GameCircle: CANNOT_AUTHORIZE");
 							break;
 						case CANNOT_BIND: 
-							estado = "onCreate: CANNOT_BIND"; //Borrar despues.
 							Log.e(TAG, "GameCircle: CANNOT_BIND");
 							break;
 						case CANNOT_INITIALIZE:
-							estado = "onCreate: CANNOT_INITIALIZE"; //Borrar despues.
 							Log.e(TAG, "GameCircle: CANNOT_INITIALIZE");
 							break;
 						case INITIALIZING:
-							estado = "onCreate: INITIALIZING"; //Borrar despues.
 							Log.e(TAG, "GameCircle: INITIALIZING");
 							break;
 						case INVALID_SESSION:
-							estado = "onCreate: INVALID_SESSION"; //Borrar despues.
 							Log.e(TAG, "GameCircle: INVALID_SESSION");
 							break;
 						case NOT_AUTHENTICATED: 
-							estado = "onCreate: NOT_AUTHENTICATED"; //Borrar despues.
 							Log.e(TAG, "GameCircle: NOT_AUTHENTICATED");
 							break;
 						case NOT_AUTHORIZED: 
-							estado = "onCreate: NOT_AUTHORIZED"; //Borrar despues.
 							Log.e(TAG, "GameCircle: NOT_AUTHORIZED");
 							break;
 						case SERVICE_CONNECTED:
-							estado = "onCreate: SERVICE_CONNECTED"; //Borrar despues.
 							Log.e(TAG, "GameCircle: SERVICE_CONNECTED");
 							break;
 						case SERVICE_DISCONNECTED:
-							estado = "onCreate: SERVICE_DISCONNECTED"; //Borrar despues.
 							Log.e(TAG, "GameCircle: SERVICE_DISCONNECTED");
 							break;
 						case SERVICE_NOT_OPTED_IN:
-							estado = "onCreate: SERVICE_NOT_OPTED_IN"; //Borrar despues.
 							Log.e(TAG, "GameCircle: SERVICE_NOT_OPTED_IN");
 							break;
 						} 
@@ -106,21 +89,8 @@ public class GameCircle extends Extension {
 			}
 		});
 	} 
-	//Deberia ser mas flexible, aca impongo que se va a usar achievements, leaderboards y whispersync.
-	//Que pasaria si el desarrollador no quisiera whispersync?
-	//Frula cosmica.
 
-/*	public static void setFeatures(boolean achievements, boolean leaderboards, boolean whispersync) {
-		if (achievements)
-			if (leaderboards)
-				if (whispersync)
-					features.of(AmazonGamesFeature.Achievements, AmazonGamesFeature.Leaderboards, AmazonGamesFeature.Whispersync));
-				else
-					features.of(AmazonGamesFeature.Achievements, AmazonGamesFeature.Leaderboards));
-	} Muchas permutaciones.
-*/
-
-	public static void init(boolean enableWhispersync) { //Este init podria contener el codigo de setFeatures, setear el EnumSet desde aca y usarlo en resume().
+	public static void init(boolean enableWhispersync) {
 		if (enableWhispersync) {
 			gameFeatures = EnumSet.of(AmazonGamesFeature.Achievements, AmazonGamesFeature.Leaderboards, AmazonGamesFeature.Whispersync);
 			resume();
@@ -348,10 +318,6 @@ public class GameCircle extends Extension {
 	//////////////////////////////////////////////////////////////////////
 	///////////// DEBUG
 	//////////////////////////////////////////////////////////////////////
-
-	public static String displayMessage () {
-		return estado +" "+ numerito +" "+ numerote;
-	}
 
 	public static boolean isInitialized() {
 		try {
