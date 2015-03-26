@@ -25,23 +25,6 @@ class MainClass {
 		// The only parameter is to enable Whispersync.
 		// Note, the init method automatically make the Login With Amazon. 
 		GooglePlayGames.init(true);
-		
-		//Second, subscribe to the event listener for resume/pause your app.
-		Lib.current.stage.addEventListener(Event.DEACTIVATE, onDeactivate);
-	}
-	
-	private function onDeactivate(e:Event=null) {
-		trace('App is deactivated');
-		GameCircle.pause();
-		Lib.current.stage.removeEventListener(Event.DEACTIVATE, onDeactivate);
-		Lib.current.stage.addEventListener(Event.ACTIVATE, onActivate);
-	}
- 
-	private function onActivate(e:Event=null) {
-		trace('App is activated');
-		GameCircle.resume();
-		Lib.current.stage.removeEventListener(Event.ACTIVATE, onActivate);
-		Lib.current.stage.addEventListener(Event.DEACTIVATE, onDeactivate);
 	}
 
 	function displayScoreboard() {

@@ -1,6 +1,8 @@
 package extension.gc;
 
 import haxe.Int64;
+import flash.Lib;
+import flash.events.Event;
 
 class GameCircle {
 
@@ -11,40 +13,50 @@ class GameCircle {
 	///////////// INIT
 	//////////////////////////////////////////////////////////////////////	
 
-	public static var javaInit(default,null):Bool->Void=
+	private static var javaInit(default,null):Bool->Void=
 	#if android
-		openfl.utils.JNI.createStaticMethod("com/gcex/GameCircle", "init", "()V");
+		openfl.utils.JNI.createStaticMethod("com/gcex/GameCircle", "init", "(Z)V");
 	#else
-		function():Void{}
+		function(enableWhispersync:Bool):Void{}
 	#end
 
-	public static var javaResume(default,null):Void->Void=
+	private static var javaResume(default,null):Void->Void=
 	#if android
 		openfl.utils.JNI.createStaticMethod("com/gcex/GameCircle", "resume", "()V");
 	#else
 		function():Void{}
 	#end
 
-	public static var javaPause(default,null):Void->Void=
+	private static var javaPause(default,null):Void->Void=
 	#if android
 		openfl.utils.JNI.createStaticMethod("com/gcex/GameCircle", "pause", "()V");
 	#else
 		function():Void{}
 	#end
 
-	public static function pause() {
+	private static function pause(_) {
 		trace("Pausing");
-		javaPause();
+		try {
+			javaPause();			
+		} catch(e:String) {
+			trace("Pausing exception: "+ e);
+		}
 	}
 
-	public static function resume() {
+	private static function resume(_) {
 		trace("Resuming");
-		javaResume();
+		try {
+			javaResume();			
+		} catch(e:String) {
+			trace("Pausing exception: "+ e);
+		}
 	}
 
 	public static function init(enableWhispersync:Bool) {
 		trace("Initializing");
 		javaInit(enableWhispersync);
+		Lib.current.stage.addEventListener(Event.DEACTIVATE, pause);
+		Lib.current.stage.addEventListener(Event.ACTIVATE, resume);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -75,7 +87,7 @@ class GameCircle {
 	#if android
 		openfl.utils.JNI.createStaticMethod("com/gcex/GameCircle", "cloudGet", "(Ljava/lang/String;Lorg/haxe/lime/HaxeObject;)Z");
 	#else
-		function(key:String, callback:GooglePlayGames):Bool{return false;}
+		function(key:String, callback:GameCircle):Bool{return false;}
 	#end
 
 	public static function cloudGet(key:String):Bool{
@@ -123,7 +135,7 @@ class GameCircle {
 	#if android
 		openfl.utils.JNI.createStaticMethod("com/gcex/GameCircle", "setSteps", "(Ljava/lang/String;F)Z");
 	#else
-		function(id:String,steps:Int):Bool{return false;}
+		function(id:String,steps:Float):Bool{return false;}
 	#end
 	
 /*	public static var increment(default,null):String->Float->Bool=
