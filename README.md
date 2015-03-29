@@ -156,3 +156,15 @@ Once this is done, you just need to add this to your project.xml
 <haxelib name="extension-gamecircle" />
 <assets path="assets/api_key.txt" rename="api_key.txt" if="android"/> <!-- Replace this with your GameCircle ApyKey generated in "GameCircle Developer Console"! -->
 ```
+
+
+###Disclaimer
+
+Amazon is a registered trademark of Amazon Technologies, Inc.
+http://unibrander.com/united-states/12554US/amazon.html
+
+###License
+
+The MIT License (MIT) - [LICENSE.md](LICENSE.md)
+
+Copyright &copy; 2015 Cristian Costa
