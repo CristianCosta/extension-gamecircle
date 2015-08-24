@@ -32,6 +32,7 @@ public class GameCircle extends Extension {
 	private static AmazonGamesClient agsClient = null;
 	private static GameDataMap gameDataMap = null;
 	private static EnumSet<AmazonGamesFeature> gameFeatures;
+	private static boolean enableWhispersync = false;
 	
 	//////////////////////////////////////////////////////////////////////
 	///////////// INIT
@@ -49,6 +50,9 @@ public class GameCircle extends Extension {
 					public void onServiceReady(AmazonGamesClient amazonGamesClient) {
 						agsClient = amazonGamesClient;
 						Log.i(TAG, "GameCircle: initialize Successful");
+						if(enableWhispersync) {
+							gameDataMap = AmazonGamesClient.getWhispersyncClient().getGameData();
+						}
 					}
 					@Override
 					public void onServiceNotReady(AmazonGamesStatus reason) {
