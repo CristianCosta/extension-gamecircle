@@ -96,15 +96,14 @@ public class GameCircle extends Extension {
 
 	public static void init(boolean enableWhispersync) {
 		Log.e(TAG, "GameCircle: INIT");
+		GameCircle.enableWhispersync = enableWhispersync;
 		try{
 			if (enableWhispersync) {
 				gameFeatures = EnumSet.of(AmazonGamesFeature.Achievements, AmazonGamesFeature.Leaderboards, AmazonGamesFeature.Whispersync);
-				resume();
-				gameDataMap = AmazonGamesClient.getWhispersyncClient().getGameData();
 			} else {
 				gameFeatures = EnumSet.of(AmazonGamesFeature.Achievements, AmazonGamesFeature.Leaderboards);
-				resume();
 			}
+			resume();
 		}catch(Exception e){
 			Log.i(TAG, "GameCircle: init Exception");
 			Log.i(TAG, e.toString());
