@@ -20,43 +20,9 @@ class GameCircle {
 		function(enableWhispersync:Bool):Void{}
 	#end
 
-	private static var javaResume(default,null):Void->Void=
-	#if android
-		openfl.utils.JNI.createStaticMethod("com/gcex/GameCircle", "resume", "()V");
-	#else
-		function():Void{}
-	#end
-
-	private static var javaPause(default,null):Void->Void=
-	#if android
-		openfl.utils.JNI.createStaticMethod("com/gcex/GameCircle", "pause", "()V");
-	#else
-		function():Void{}
-	#end
-
-	private static function pause(_) {
-		trace("Pausing");
-		try {
-			javaPause();			
-		} catch(e:String) {
-			trace("Pausing exception: "+ e);
-		}
-	}
-
-	private static function resume(_) {
-		trace("Resuming");
-		try {
-			javaResume();			
-		} catch(e:String) {
-			trace("Pausing exception: "+ e);
-		}
-	}
-
 	public static function init(enableWhispersync:Bool) {
 		trace("Initializing");
 		javaInit(enableWhispersync);
-		Lib.current.stage.addEventListener(Event.DEACTIVATE, pause);
-		Lib.current.stage.addEventListener(Event.ACTIVATE, resume);
 	}
 
 	//////////////////////////////////////////////////////////////////////

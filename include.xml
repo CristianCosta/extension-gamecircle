@@ -2,5 +2,6 @@
 <extension>
 	<section if="android">
 		<dependency name="gcex" path="dependencies/gcex" /> 
+		<android extension="com.gcex.GameCircle" />
 	</section>
 </extension>

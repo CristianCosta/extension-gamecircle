@@ -31,18 +31,20 @@ public class GameCircle extends Extension {
 	private static AmazonGamesStatus gamesStatus = AmazonGamesStatus.INITIALIZING;
 	private static AmazonGamesClient agsClient = null;
 	private static GameDataMap gameDataMap = null;
-	private static EnumSet<AmazonGamesFeature> gameFeatures;
+	private static EnumSet<AmazonGamesFeature> gameFeatures = null;
 	private static boolean enableWhispersync = false;
 	
 	//////////////////////////////////////////////////////////////////////
 	///////////// INIT
 	//////////////////////////////////////////////////////////////////////
 
-	public static void pause() {
+	private static void pause() {
 		if (agsClient != null) agsClient.release();
 	}
 
-	public static void resume() {
+	private static void resume() {
+		if(gameFeatures==null) return;
+		
 		mainActivity.runOnUiThread(new Runnable() {
 			public void run() {
 				AmazonGamesClient.initialize(mainActivity, new AmazonGamesCallback() {
@@ -323,5 +325,45 @@ public class GameCircle extends Extension {
 		} catch (Exception e) {}
 		return false;
 	}
+
+	//////////////////////////////////////////////////////////////////////
+	///////////// EVENT SUSCRIPTIONS
+	//////////////////////////////////////////////////////////////////////
+	
+	/**
+	 * Called as part of the activity lifecycle when an activity is going into
+	 * the background, but has not (yet) been killed.
+	 */
+	@Override public void onPause () {
+		try{
+			Log.i(TAG, "GameCircle: onPause 1");
+			GameCircle.pause();
+			Log.i(TAG, "GameCircle: onPause 2");
+		}catch(Exception e){
+			Log.i(TAG, "GameCircle: onPause Exception");
+			Log.i(TAG, e.toString());
+		}
+	}
+	
+	
+	/**
+	 * Called after {@link #onRestart}, or {@link #onPause}, for your activity 
+	 * to start interacting with the user.
+	 */
+	@Override public void onResume () {
+		try{
+			Log.i(TAG, "GameCircle: onResume 1");
+			GameCircle.resume();
+			Log.i(TAG, "GameCircle: onResume 2");
+		}catch(Exception e){
+			Log.i(TAG, "GameCircle: onResume Exception");
+			Log.i(TAG, e.toString());
+		}
+	}
+	
+	
+	//////////////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////////////////
+
 
 }
