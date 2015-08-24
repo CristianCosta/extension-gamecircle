@@ -129,41 +129,28 @@ public class GameCircle extends Extension {
 
 	public static boolean cloudGet(final String key, final HaxeObject callbackObject) {
 		try {
-			AmazonGamesClient.getWhispersyncClient().setWhispersyncEventListener(new WhispersyncEventListener() {
-				public void onNewCloudData() {
-					try {
-						handlePotentialGameDataConflicts(key, callbackObject);
-					} catch (Exception e) {
-						Log.i(TAG, "GameCircle: cloudGet CRITICAL Exception");
-						Log.i(TAG, e.toString());
-					}
-				}
-				public void onDataUploadedToCloud() {
-					try {
-						handlePotentialGameDataConflicts(key, callbackObject);
-					} catch (Exception e) {
-						Log.i(TAG, "GameCircle: cloudGet CRITICAL Exception");
-						Log.i(TAG, e.toString());
-					}
-				}
-			});
+			if(gameDataMap==null){
+				Log.i(TAG, "GameCircle: handlePotentialGameDataConflicts - NOT INITIALIZED YET. DOING NOTHING!");
+				return false;
+			}
+			SyncableDeveloperString developerString = gameDataMap.getDeveloperString(key);
+
+			if (developerString==null) {
+				callbackObject.call2("cloudGetCallback", key, null);			
+			} else if (developerString.inConflict()) {
+				String server = developerString.getCloudValue();
+				String local = developerString.getValue();
+				callbackObject.call3("cloudGetConflictCallback", key, local, server);
+			} else {
+				callbackObject.call2("cloudGetCallback", key, developerString.getValue());
+			}
+
 		} catch (Exception e) {
 			Log.i(TAG, "GameCircle: cloudGet Exception");
 			Log.i(TAG, e.toString());
 			return false;
 		}
 		return true;
-	}
-
-	private static void handlePotentialGameDataConflicts(String key, HaxeObject callbackObject) {
-		SyncableDeveloperString developerString = gameDataMap.getDeveloperString(key);
-		if (developerString.inConflict()) {
-			String server = developerString.getCloudValue();
-			String local = developerString.getValue();
-			callbackObject.call3("cloudGetConflictCallback", key, local, server);
-		} else {
-			callbackObject.call2("cloudGetCallback", key, developerString.getValue());
-		}
 	}
 
 	public static boolean markConflictAsResolved(String key) {
