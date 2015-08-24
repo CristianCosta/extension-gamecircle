@@ -206,8 +206,8 @@ class GameCircle {
 	}
 
 	public static function setScore64(id:String, score:Int64):Bool {
-		var low_score:Int = Int64.getLow(score);
-		var high_score:Int = Int64.getHigh(score);
+		var low_score:Int = score.low;
+		var high_score:Int = score.high;
 		return javaSetScore(id, high_score, low_score);
 	}
 	
