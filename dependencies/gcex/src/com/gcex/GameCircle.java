@@ -97,7 +97,6 @@ public class GameCircle extends Extension {
 	} 
 
 	public static void init(boolean enableWhispersync) {
-		Log.e(TAG, "GameCircle: INIT");
 		GameCircle.enableWhispersync = enableWhispersync;
 		try{
 			if (enableWhispersync) {
@@ -111,7 +110,6 @@ public class GameCircle extends Extension {
 			Log.i(TAG, e.toString());
 			return;
 		}
-		Log.e(TAG, "GameCircle: INIT FINISH");
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -336,9 +334,7 @@ public class GameCircle extends Extension {
 	 */
 	@Override public void onPause () {
 		try{
-			Log.i(TAG, "GameCircle: onPause 1");
 			GameCircle.pause();
-			Log.i(TAG, "GameCircle: onPause 2");
 		}catch(Exception e){
 			Log.i(TAG, "GameCircle: onPause Exception");
 			Log.i(TAG, e.toString());
@@ -352,9 +348,7 @@ public class GameCircle extends Extension {
 	 */
 	@Override public void onResume () {
 		try{
-			Log.i(TAG, "GameCircle: onResume 1");
 			GameCircle.resume();
-			Log.i(TAG, "GameCircle: onResume 2");
 		}catch(Exception e){
 			Log.i(TAG, "GameCircle: onResume Exception");
 			Log.i(TAG, e.toString());
