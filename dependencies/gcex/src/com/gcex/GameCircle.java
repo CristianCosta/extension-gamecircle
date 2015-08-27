@@ -30,7 +30,6 @@ public class GameCircle extends Extension {
 	private static final String TAG = "EXTENSION-GAMECIRCLE";
 	private static AmazonGamesStatus gamesStatus = AmazonGamesStatus.INITIALIZING;
 	private static AmazonGamesClient agsClient = null;
-	private static GameDataMap gameDataMap = null;
 	private static EnumSet<AmazonGamesFeature> gameFeatures = null;
 	private static boolean enableWhispersync = false;
 	
@@ -39,66 +38,72 @@ public class GameCircle extends Extension {
 	//////////////////////////////////////////////////////////////////////
 
 	private static void pause() {
-		if (agsClient != null) agsClient.release();
+		if (agsClient != null) {
+			agsClient.release();
+			agsClient = null;
+		}
 	}
 
 	private static void resume() {
-		if(gameFeatures==null) return;
-		
+		if(gameFeatures == null) return;
+		agsClient = null;
+
 		mainActivity.runOnUiThread(new Runnable() {
 			public void run() {
-				AmazonGamesClient.initialize(mainActivity, new AmazonGamesCallback() {
-					@Override
-					public void onServiceReady(AmazonGamesClient amazonGamesClient) {
-						agsClient = amazonGamesClient;
-						Log.i(TAG, "GameCircle: initialize Successful");
-						if(enableWhispersync) {
-							gameDataMap = AmazonGamesClient.getWhispersyncClient().getGameData();
+				try{
+					AmazonGamesClient.initialize(mainActivity, new AmazonGamesCallback() {
+						@Override
+						public void onServiceReady(AmazonGamesClient amazonGamesClient) {
+							agsClient = amazonGamesClient;
+							Log.i(TAG, "GameCircle: initialize Successful");
 						}
-					}
-					@Override
-					public void onServiceNotReady(AmazonGamesStatus reason) {
-						switch (reason) { 
-						case CANNOT_AUTHORIZE: 
-							Log.e(TAG, "GameCircle: CANNOT_AUTHORIZE");
-							break;
-						case CANNOT_BIND: 
-							Log.e(TAG, "GameCircle: CANNOT_BIND");
-							break;
-						case CANNOT_INITIALIZE:
-							Log.e(TAG, "GameCircle: CANNOT_INITIALIZE");
-							break;
-						case INITIALIZING:
-							Log.e(TAG, "GameCircle: INITIALIZING");
-							break;
-						case INVALID_SESSION:
-							Log.e(TAG, "GameCircle: INVALID_SESSION");
-							break;
-						case NOT_AUTHENTICATED: 
-							Log.e(TAG, "GameCircle: NOT_AUTHENTICATED");
-							break;
-						case NOT_AUTHORIZED: 
-							Log.e(TAG, "GameCircle: NOT_AUTHORIZED");
-							break;
-						case SERVICE_CONNECTED:
-							Log.e(TAG, "GameCircle: SERVICE_CONNECTED");
-							break;
-						case SERVICE_DISCONNECTED:
-							Log.e(TAG, "GameCircle: SERVICE_DISCONNECTED");
-							break;
-						case SERVICE_NOT_OPTED_IN:
-							Log.e(TAG, "GameCircle: SERVICE_NOT_OPTED_IN");
-							break;
-						} 
-					}
-				}, gameFeatures);
+						@Override
+						public void onServiceNotReady(AmazonGamesStatus reason) {
+							switch (reason) { 
+								case CANNOT_AUTHORIZE: 
+									Log.e(TAG, "GameCircle: CANNOT_AUTHORIZE");
+									break;
+								case CANNOT_BIND: 
+									Log.e(TAG, "GameCircle: CANNOT_BIND");
+									break;
+								case CANNOT_INITIALIZE:
+									Log.e(TAG, "GameCircle: CANNOT_INITIALIZE");
+									break;
+								case INITIALIZING:
+									Log.e(TAG, "GameCircle: INITIALIZING");
+									break;
+								case INVALID_SESSION:
+									Log.e(TAG, "GameCircle: INVALID_SESSION");
+									break;
+								case NOT_AUTHENTICATED: 
+									Log.e(TAG, "GameCircle: NOT_AUTHENTICATED");
+									break;
+								case NOT_AUTHORIZED: 
+									Log.e(TAG, "GameCircle: NOT_AUTHORIZED");
+									break;
+								case SERVICE_CONNECTED:
+									Log.e(TAG, "GameCircle: SERVICE_CONNECTED");
+									break;
+								case SERVICE_DISCONNECTED:
+									Log.e(TAG, "GameCircle: SERVICE_DISCONNECTED");
+									break;
+								case SERVICE_NOT_OPTED_IN:
+									Log.e(TAG, "GameCircle: SERVICE_NOT_OPTED_IN");
+									break;
+							}
+						}
+					}, gameFeatures);
+				}catch(Exception e){
+					Log.i(TAG, "GameCircle: resume -> run Exception");
+					Log.i(TAG, e.toString());				
+				}
 			}
 		});
 	} 
 
 	public static void init(boolean enableWhispersync) {
-		GameCircle.enableWhispersync = enableWhispersync;
 		try{
+			GameCircle.enableWhispersync = enableWhispersync;
 			if (enableWhispersync) {
 				gameFeatures = EnumSet.of(AmazonGamesFeature.Achievements, AmazonGamesFeature.Leaderboards, AmazonGamesFeature.Whispersync);
 			} else {
@@ -117,51 +122,74 @@ public class GameCircle extends Extension {
 	//////////////////////////////////////////////////////////////////////
 
 	public static boolean cloudSet(String key, String value){
+		if(agsClient == null){
+			Log.i(TAG, "GameCircle: unlock - agsClient is null... wait a bit more please!");
+			return false;
+		}
+		if(!enableWhispersync){
+			Log.i(TAG, "GameCircle: cloudSet - Whispersync is not enabled, ignoring!");
+			return false;
+		}
 		try {
-			gameDataMap.getDeveloperString(key).setValue(value);
+			SyncableDeveloperString developerString = AmazonGamesClient.getWhispersyncClient().getGameData().getDeveloperString(key);
+			if (developerString==null) return false;
+			developerString.setValue(value);
+			return true;
 		} catch (Exception e) {
 			Log.i(TAG, "GameCircle: cloudSet Exception");
 			Log.i(TAG, e.toString());
 			return false;
 		}
-		return true;
 	}
 
 	public static boolean cloudGet(final String key, final HaxeObject callbackObject) {
-		try {
-			if(gameDataMap==null){
-				Log.i(TAG, "GameCircle: handlePotentialGameDataConflicts - NOT INITIALIZED YET. DOING NOTHING!");
-				return false;
-			}
-			SyncableDeveloperString developerString = gameDataMap.getDeveloperString(key);
-
-			if (developerString==null) {
-				callbackObject.call2("cloudGetCallback", key, null);			
-			} else if (developerString.inConflict()) {
-				String server = developerString.getCloudValue();
-				String local = developerString.getValue();
-				callbackObject.call3("cloudGetConflictCallback", key, local, server);
-			} else {
-				callbackObject.call2("cloudGetCallback", key, developerString.getValue());
-			}
-
-		} catch (Exception e) {
-			Log.i(TAG, "GameCircle: cloudGet Exception");
-			Log.i(TAG, e.toString());
+		if(agsClient == null){
+			Log.i(TAG, "GameCircle: unlock - agsClient is null... wait a bit more please!");
 			return false;
 		}
+		if(!enableWhispersync){
+			Log.i(TAG, "GameCircle: cloudGet - Whispersync is not enabled, ignoring!");
+			return false;
+		}
+		mainActivity.runOnUiThread(new Runnable() {
+			public void run() {
+				try {
+					SyncableDeveloperString developerString = AmazonGamesClient.getWhispersyncClient().getGameData().getDeveloperString(key);
+					if (developerString==null) {
+						callbackObject.call2("cloudGetCallback", key, null);			
+					} else if (developerString.inConflict()) {
+						String server = developerString.getCloudValue();
+						String local = developerString.getValue();
+						callbackObject.call3("cloudGetConflictCallback", key, local, server);
+					} else {
+						callbackObject.call2("cloudGetCallback", key, developerString.getValue());
+					}
+				} catch (Exception e) {
+					Log.i(TAG, "GameCircle: cloudGet Exception");
+					Log.i(TAG, e.toString());
+				}
+			}
+		});
 		return true;
 	}
 
 	public static boolean markConflictAsResolved(String key) {
+		if(agsClient == null){
+			Log.i(TAG, "GameCircle: unlock - agsClient is null... wait a bit more please!");
+			return false;
+		}
+		if(!enableWhispersync){
+			Log.i(TAG, "GameCircle: markConflictAsResolved - Whispersync is not enabled, ignoring!");
+			return false;
+		}
 		try {
-			gameDataMap.getDeveloperString(key).markAsResolved();
+			AmazonGamesClient.getWhispersyncClient().getGameData().getDeveloperString(key).markAsResolved();
+			return true;
 		} catch (Exception e) {
 			Log.i(TAG, "GameCircle: markConflictAsResolved Exception");
 			Log.i(TAG, e.toString());
 			return false;
 		}
-		return true;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -169,83 +197,107 @@ public class GameCircle extends Extension {
 	//////////////////////////////////////////////////////////////////////
 
 	public static boolean displayAchievements() {
-		try {
-			AmazonGamesClient.getInstance().getAchievementsClient().showAchievementsOverlay();
-		} catch (Exception e) {
-			// Try connecting again
-			Log.i(TAG, "GameCircle: displayAchievements Exception");
-			Log.i(TAG, e.toString());
-			resume();
+		if(agsClient == null){
+			Log.i(TAG, "GameCircle: displayAchievements - agsClient is null... wait a bit more please!");
 			return false;
 		}
-		return true;
+		try {
+			agsClient.getAchievementsClient().showAchievementsOverlay();
+			return true;
+		} catch (Exception e) {
+			Log.i(TAG, "GameCircle: displayAchievements Exception");
+			Log.i(TAG, e.toString());
+			return false;
+		}
 	}
 
 	public static boolean unlock(String idAchievement){
+		if(agsClient == null){
+			Log.i(TAG, "GameCircle: unlock - agsClient is null... wait a bit more please!");
+			return false;
+		}
 		try {
-			AmazonGamesClient.getInstance().getAchievementsClient().updateProgress(idAchievement, 100.0f);
+			agsClient.getAchievementsClient().updateProgress(idAchievement, 100.0f);
+			return true;
 		} catch (Exception e) {
 			Log.i(TAG, "GameCircle: unlock Exception");
 			Log.i(TAG, e.toString());
 			return false;
 		}
-		return true;
 	}
 	
 	public static boolean setSteps(String idAchievement, float steps){
+		if(agsClient == null){
+			Log.i(TAG, "GameCircle: setSteps - agsClient is null... wait a bit more please!");
+			return false;
+		}
 		try {
-			AmazonGamesClient.getInstance().getAchievementsClient().updateProgress(idAchievement, steps);
+			agsClient.getAchievementsClient().updateProgress(idAchievement, steps);
+			return true;
 		} catch (Exception e) {
 			Log.i(TAG, "GameCircle: unlock Exception");
 			Log.i(TAG, e.toString());
 			return false;
 		}
-		return true;
 	}
 
 	public static boolean getAchievementStatus(final String idAchievement, final HaxeObject callbackObject) {
+		if(agsClient == null){
+			Log.i(TAG, "GameCircle: getAchievementStatus - agsClient is null... wait a bit more please!");
+			return false;
+		}
 		try {
-			AmazonGamesClient.getInstance().getAchievementsClient().getAchievements().setCallback(new AGResponseCallback<GetAchievementsResponse>() {
+			agsClient.getAchievementsClient().getAchievements().setCallback(new AGResponseCallback<GetAchievementsResponse>() {
 				@Override
 				public void onComplete(GetAchievementsResponse achievementsResponse) {
-					for (Achievement ach: achievementsResponse.getAchievementsList()) {
-						if (ach.getId().equals(idAchievement)) {
-							if (ach.isUnlocked()) callbackObject.call2("onGetAchievementStatus", idAchievement, 1);
-							else callbackObject.call2("onGetAchievementStatus", idAchievement, 0);
+					try{
+						for (Achievement ach: achievementsResponse.getAchievementsList()) {
+							if (ach.getId().equals(idAchievement)) {
+								if (ach.isUnlocked()) callbackObject.call2("onGetAchievementStatus", idAchievement, 1);
+								else callbackObject.call2("onGetAchievementStatus", idAchievement, 0);
+							}
 						}
+					}catch(Exception e){			
+						Log.i(TAG, "GameCircle: getAchievementStatus -> onComplete Exception");
+						Log.i(TAG, e.toString());
 					}
 				}
 			});
+			return true;
 		} catch (Exception e) {
-			// Try connecting again
 			Log.i(TAG, "GameCircle: getAchievementStatus Exception");
 			Log.i(TAG, e.toString());
-			resume();
 			return false;
 		}
-		return true;
 	}
 	
 	public static boolean getCurrentAchievementSteps(final String idAchievement, final HaxeObject callbackObject) {
+		if(agsClient == null){
+			Log.i(TAG, "GameCircle: getCurrentAchievementSteps - agsClient is null... wait a bit more please!");
+			return false;
+		}
 		try {
-			AmazonGamesClient.getInstance().getAchievementsClient().getAchievements().setCallback(new AGResponseCallback<GetAchievementsResponse>() {
+			agsClient.getAchievementsClient().getAchievements().setCallback(new AGResponseCallback<GetAchievementsResponse>() {
 				@Override
 				public void onComplete(GetAchievementsResponse achievementsResponse) {
-					for (Achievement ach: achievementsResponse.getAchievementsList()) {
-						if (ach.getId().equals(idAchievement)) {
-							callbackObject.call2("onGetAchievementSteps", idAchievement, ach.getProgress());
+					try{
+						for (Achievement ach: achievementsResponse.getAchievementsList()) {
+							if (ach.getId().equals(idAchievement)) {
+								callbackObject.call2("onGetAchievementSteps", idAchievement, ach.getProgress());
+							}
 						}
+					}catch(Exception e){			
+						Log.i(TAG, "GameCircle: getCurrentAchievementSteps -> onComplete Exception");
+						Log.i(TAG, e.toString());
 					}
 				}
 			});
+			return true;
 		} catch (Exception e) {
-			// Try connecting again
 			Log.i(TAG, "GameCircle: getCurrentAchievementSteps Exception");
 			Log.i(TAG, e.toString());
-			resume();
 			return false;
 		}
-		return true;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -253,64 +305,79 @@ public class GameCircle extends Extension {
 	//////////////////////////////////////////////////////////////////////
 
 	public static boolean displayScoreboard(String idScoreboard) {
+		if(agsClient == null){
+			Log.i(TAG, "GameCircle: displayScoreboard - agsClient is null... wait a bit more please!");
+			return false;
+		}
 		try {
-			AmazonGamesClient.getInstance().getLeaderboardsClient().showLeaderboardOverlay(idScoreboard);
+			agsClient.getLeaderboardsClient().showLeaderboardOverlay(idScoreboard);
+			return true;
 		} catch (Exception e) {
 			Log.i(TAG, "GameCircle: displayScoreboard Exception");
 			Log.i(TAG, e.toString());
-			resume();
 			return false;
 		}
-		return true;
 	}
 
 	public static boolean displayAllScoreboards() {
-		try {
-			AmazonGamesClient.getInstance().getLeaderboardsClient().showLeaderboardsOverlay();
-		} catch (Exception e) {
-			// Try connecting again
-			Log.i(TAG, "GameCircle: displayScoreboard Exception");
-			Log.i(TAG, e.toString());
-			resume();
+		if(agsClient == null){
+			Log.i(TAG, "GameCircle: displayAllScoreboards - agsClient is null... wait a bit more please!");
 			return false;
 		}
-		return true;
+		try {
+			agsClient.getLeaderboardsClient().showLeaderboardsOverlay();
+			return true;
+		} catch (Exception e) {
+			Log.i(TAG, "GameCircle: displayAllScoreboards Exception");
+			Log.i(TAG, e.toString());
+			return false;
+		}
 	}
 	
 	public static boolean setScore(String leaderboardId, int high_score, int low_score){
+		if(agsClient == null){
+			Log.i(TAG, "GameCircle: setScore - agsClient is null... wait a bit more please!");
+			return false;
+		}
 		try {
 			long score = (((long)high_score << 32) | ((long)low_score & 0xFFFFFFFF));
-			AmazonGamesClient.getInstance().getLeaderboardsClient().submitScore(leaderboardId, score);
+			agsClient.getLeaderboardsClient().submitScore(leaderboardId, score);
+		   	return true;
         } catch (Exception e) {
 			Log.i(TAG, "GameCircle: setScore Exception");
 			Log.i(TAG, e.toString());
 			return false;
 		}
-		Log.i(TAG, "GameCircle: setScore complete");
-    	return true;
 	}
 
 	public static boolean getPlayerScore(final String idScoreboard, final HaxeObject callbackObject) {
+		if(agsClient == null){
+			Log.i(TAG, "GameCircle: getPlayerScore - agsClient is null... wait a bit more please!");
+			return false;
+		}
 		try {
-			AmazonGamesClient.getInstance().getLeaderboardsClient().getLocalPlayerScore(idScoreboard, LeaderboardFilter.GLOBAL_ALL_TIME).setCallback(new AGResponseCallback<GetPlayerScoreResponse>() {
+			agsClient.getLeaderboardsClient().getLocalPlayerScore(idScoreboard, LeaderboardFilter.GLOBAL_ALL_TIME).setCallback(new AGResponseCallback<GetPlayerScoreResponse>() {
 				@Override
 				public void onComplete(GetPlayerScoreResponse playerScore) {
-					if (playerScore != null) {
-						long score = playerScore.getScoreValue();
-						int high_score = (int) (score >>> 32);
-						int low_score = (int) (score & 0xFFFFFFFF);
-						callbackObject.call3("onGetScoreboard", idScoreboard, high_score, low_score);
+					try{
+						if (playerScore != null) {
+							long score = playerScore.getScoreValue();
+							int high_score = (int) (score >>> 32);
+							int low_score = (int) (score & 0xFFFFFFFF);
+							callbackObject.call3("onGetScoreboard", idScoreboard, high_score, low_score);
+						}
+					} catch(Exception e) {
+						Log.i(TAG, "GameCircle: getPlayerScore -> onComplete Exception");
+						Log.i(TAG, e.toString());
 					}
 				}
 			});
+			return true;
 		} catch (Exception e) {
-			// Try connecting again
 			Log.i(TAG, "GameCircle: getPlayerScore Exception");
 			Log.i(TAG, e.toString());
-			resume();
 			return false;
 		}
-		return true;
 	}	
 
 	//////////////////////////////////////////////////////////////////////
@@ -320,8 +387,9 @@ public class GameCircle extends Extension {
 	public static boolean isInitialized() {
 		try {
 			return AmazonGamesClient.isInitialized();
-		} catch (Exception e) {}
-		return false;
+		} catch (Exception e) {
+			return false;
+		}
 	}
 
 	//////////////////////////////////////////////////////////////////////
