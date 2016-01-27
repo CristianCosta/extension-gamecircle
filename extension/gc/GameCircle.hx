@@ -97,9 +97,9 @@ class GameCircle {
 		function(id:String):Bool{return false;}
 	#end
 	
-	public static var setSteps(default,null):String->Float->Bool=
+	public static var setProgress(default,null):String->Float->Bool=
 	#if android
-		openfl.utils.JNI.createStaticMethod("com/gcex/GameCircle", "setSteps", "(Ljava/lang/String;F)Z");
+		openfl.utils.JNI.createStaticMethod("com/gcex/GameCircle", "setProgress", "(Ljava/lang/String;F)Z");
 	#else
 		function(id:String,steps:Float):Bool{return false;}
 	#end
@@ -123,23 +123,23 @@ class GameCircle {
 		if (onGetPlayerAchievementStatus != null) onGetPlayerAchievementStatus(idAchievement, state);
 	}
 	
-	///////////// ACHIEVEMENTS CURRENT STEPS
+	///////////// ACHIEVEMENTS CURRENT PROGRESS
 	
-	public static var onGetPlayerCurrentSteps:String->Float->Void=null;
+	public static var onGetPlayerCurrentProgress:String->Float->Void=null;
 
-	public static function getCurrentAchievementSteps(id:String):Bool {
-		return javaGetCurrentAchievementSteps(id, getInstance());
+	public static function getAchievementCurrentProgress(id:String):Bool {
+		return javaGetAchievementCurrentProgress(id, getInstance());
 	}
 
-	private static var javaGetCurrentAchievementSteps(default,null):String->GameCircle->Bool=
+	private static var javaGetAchievementCurrentProgress(default,null):String->GameCircle->Bool=
 	#if android
-		openfl.utils.JNI.createStaticMethod("com/gcex/GameCircle", "getCurrentAchievementSteps", "(Ljava/lang/String;Lorg/haxe/lime/HaxeObject;)Z");
+		openfl.utils.JNI.createStaticMethod("com/gcex/GameCircle", "getAchievementCurrentProgress", "(Ljava/lang/String;Lorg/haxe/lime/HaxeObject;)Z");
 	#else
 		function(id:String, callback:GameCircle):Bool{return false;}
 	#end
 
-	public function onGetAchievementSteps(idAchievement:String, steps:Float) {
-		if (onGetPlayerCurrentSteps != null) onGetPlayerCurrentSteps(idAchievement, steps);
+	public function onGetAchievementProgress(idAchievement:String, progress:Float) {
+		if (onGetPlayerCurrentProgress != null) onGetPlayerCurrentProgress(idAchievement, progress);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -172,8 +172,8 @@ class GameCircle {
 	}
 
 	public static function setScore64(id:String, score:Int64):Bool {
-		var low_score:Int = score.low;
-		var high_score:Int = score.high;
+		var low_score:Int = Int64.getLow(score);
+		var high_score:Int = Int64.getHigh(score);
 		return javaSetScore(id, high_score, low_score);
 	}
 	

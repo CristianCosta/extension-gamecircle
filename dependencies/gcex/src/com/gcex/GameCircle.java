@@ -226,9 +226,9 @@ public class GameCircle extends Extension {
 		}
 	}
 	
-	public static boolean setSteps(String idAchievement, float steps){
+	public static boolean setProgress(String idAchievement, float steps){
 		if(agsClient == null){
-			Log.i(TAG, "GameCircle: setSteps - agsClient is null... wait a bit more please!");
+			Log.i(TAG, "GameCircle: setProgress - agsClient is null... wait a bit more please!");
 			return false;
 		}
 		try {
@@ -271,9 +271,9 @@ public class GameCircle extends Extension {
 		}
 	}
 	
-	public static boolean getCurrentAchievementSteps(final String idAchievement, final HaxeObject callbackObject) {
+	public static boolean getAchievementCurrentProgress(final String idAchievement, final HaxeObject callbackObject) {
 		if(agsClient == null){
-			Log.i(TAG, "GameCircle: getCurrentAchievementSteps - agsClient is null... wait a bit more please!");
+			Log.i(TAG, "GameCircle: getAchievementCurrentProgress - agsClient is null... wait a bit more please!");
 			return false;
 		}
 		try {
@@ -283,18 +283,18 @@ public class GameCircle extends Extension {
 					try{
 						for (Achievement ach: achievementsResponse.getAchievementsList()) {
 							if (ach.getId().equals(idAchievement)) {
-								callbackObject.call2("onGetAchievementSteps", idAchievement, ach.getProgress());
+								callbackObject.call2("onGetAchievementProgress", idAchievement, ach.getProgress());
 							}
 						}
 					}catch(Exception e){			
-						Log.i(TAG, "GameCircle: getCurrentAchievementSteps -> onComplete Exception");
+						Log.i(TAG, "GameCircle: getAchievementCurrentProgress -> onComplete Exception");
 						Log.i(TAG, e.toString());
 					}
 				}
 			});
 			return true;
 		} catch (Exception e) {
-			Log.i(TAG, "GameCircle: getCurrentAchievementSteps Exception");
+			Log.i(TAG, "GameCircle: getAchievementCurrentProgress Exception");
 			Log.i(TAG, e.toString());
 			return false;
 		}
