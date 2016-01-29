@@ -127,7 +127,7 @@ class GameCircle {
 	
 	public static var onGetPlayerCurrentProgress:String->Float->Void=null;
 
-	public static function getAchievementCurrentProgress(id:String):Bool {
+	public static function getAchievementProgress(id:String):Bool {
 		return javaGetAchievementCurrentProgress(id, getInstance());
 	}
 
